@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Movie Rating</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #fafafa;
+      padding: 30px;
+    }
+    h1 {
+      font-size: 32px;
+    }
+    form {
+      margin: 20px auto;
+      display: inline-block;
+      text-align: left;
+      padding: 20px;
+      border: 2px solid #ccc;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    form label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    form input {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border: 1px solid #aaa;
+      border-radius: 6px;
+    }
+    form button {
+      margin-top: 15px;
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      background: #ffcc00;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    form button:hover {
+      background: #ffb700;
+    }
+    .result-box {
+      display: inline-block;
+      padding: 20px;
+      margin-top: 20px;
+      border: 5px solid transparent;
+      border-radius: 12px;
+      font-size: 18px;
+      background: #fff;
+    }
+    /* Emoji borders */
+    .smokin {
+      border-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' height='20' width='20'><text y='15' font-size='16'>🌶️</text></svg>") 30 round;
+    }
+    .pretty-hot {
+      border-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' height='20' width='20'><text y='15' font-size='16'>🌶️</text></svg>") 30 round;
+    }
+    .mild {
+      border-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' height='20' width='20'><text y='15' font-size='16'>🌶️</text></svg>") 30 round;
+    }
+    .ice-cold {
+      border-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' height='20' width='20'><text y='15' font-size='16'>🧊</text></svg>") 30 round;
+    }
+    .emoji {
+      font-size: 24px;
+      margin-left: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🍿🎬 Movie Rating App 🎬🍿</h1>
+
+  <form id="ratingForm">
+    <label for="movie">Movie Title:</label>
+    <input type="text" id="movie" name="movie" required>
+
+    <label for="rating1">User 1 Rating (0-100):</label>
+    <input type="number" id="rating1" name="rating1" min="0" max="100" required>
+
+    <label for="rating2">User 2 Rating (0-100):</label>
+    <input type="number" id="rating2" name="rating2" min="0" max="100" required>
+
+    <label for="rating3">User 3 Rating (0-100):</label>
+    <input type="number" id="rating3" name="rating3" min="0" max="100" required>
+
+    <button type="submit">Rate Movie</button>
+  </form>
+
+  <div id="result"></div>
+
+  <script>
+    document.getElementById("ratingForm").addEventListener("submit", function(event) {
+      event.preventDefault();
+
+      let movie = document.getElementById("movie").value;
+      let r1 = parseInt(document.getElementById("rating1").value, 10);
+      let r2 = parseInt(document.getElementById("rating2").value, 10);
+      let r3 = parseInt(document.getElementById("rating3").value, 10);
+
+      let ratings = [r1, r2, r3];
+      let avg = ratings.reduce((a, b) => a + b, 0) / ratings.length;
+
+      let category = "";
+      let icons = "";
+      let borderClass = "";
+
+      if (avg >= 90) {
+        category = "Smokin'";
+        icons = "🌶️🌶️🌶️";
+        borderClass = "smokin";
+      } else if (avg >= 75) {
+        category = "Pretty Hot";
+        icons = "🌶️🌶️";
+        borderClass = "pretty-hot";
+      } else if (avg >= 50) {
+        category = "Mild";
+        icons = "🌶️";
+        borderClass = "mild";
+      } else {
+        category = "Ice Cold";
+        icons = "🧊";
+        borderClass = "ice-cold";
+      }
+
+      document.getElementById("result").innerHTML =
+        `<div class="result-box ${borderClass}">
+          <p><strong>${movie}</strong><br>
+          Average: ${avg.toFixed(2)}%<br>
+          ${category} <span class="emoji">${icons}</span></p>
+        </div>`;
+    });
+  </script>
+</body>
+</html>
