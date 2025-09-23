@@ -13,6 +13,8 @@
       --win:#15c56a; /* green */
       --byu:#1f4aa1; /* BYU royal */
       --text:#ecf1ff;
+      --fail:#ff6b6b;
+      --pass:#15c56a;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -22,56 +24,46 @@
       background: radial-gradient(1200px 800px at 80% -10%, #1b2650 0%, var(--bg) 45%, #070a16 100%);
       color:var(--text);
     }
-    .wrap{
-      max-width:1200px;
-      margin:0 auto;
-      padding:28px 16px 60px;
-    }
-    header{
-      display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap
-    }
+    .wrap{ max-width:1200px; margin:0 auto; padding:28px 16px 60px; }
+    header{ display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap }
     h1{font-size:clamp(22px,3vw,34px);margin:0;letter-spacing:0.5px}
     .tag{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:linear-gradient(180deg,#20315f,#162149);color:#cfe4ff;border:1px solid #2c3c6b}
     .controls{display:flex;flex-wrap:wrap;gap:10px}
-    button{
-      background:linear-gradient(180deg,#1f355f,#15264a);
-      color:#e6efff;border:1px solid #2c4a82;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer;letter-spacing:0.2px
-    }
+    button{ background:linear-gradient(180deg,#1f355f,#15264a); color:#e6efff;border:1px solid #2c4a82;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer;letter-spacing:0.2px }
     button:hover{filter:brightness(1.08)}
     button:disabled{opacity:.5;cursor:not-allowed}
     .secondary{background:#141c34}
     .accent{background:linear-gradient(180deg,#1a5b7a,#0f3c55); border-color:#197fa0}
-    .grid{
-      margin-top:18px;
-      display:grid; gap:14px;
-      grid-template-columns: repeat(5, minmax(180px, 1fr));
-    }
+
+    .grid{ margin-top:18px; display:grid; gap:14px; grid-template-columns: repeat(5, minmax(180px, 1fr)); }
     .col{background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:12px}
     .col h3{margin:4px 2px 10px;font-size:14px;color:var(--muted);font-weight:700;letter-spacing:.6px;text-transform:uppercase}
+
     .match{position:relative;background:var(--panel);border:1px solid #2a345b;border-radius:12px; padding:8px; margin:10px 0; box-shadow:0 1px 0 rgba(0,0,0,.3)}
     .team{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 10px; border-radius:8px}
     .team + .team {margin-top:6px}
     .seed{font-size:12px; opacity:.8; min-width:26px; display:inline-block}
     .name{flex:1}
-    .score{font-variant-numeric:tabular-nums; opacity:.85; min-width:20px; text-align:right}
+    .score{font-variant-numeric:tabular-nums; opacity:.95; min-width:24px; text-align:right}
     .bye{opacity:.6; font-style:italic}
     .winner{outline:2px solid var(--win); background:linear-gradient(180deg, rgba(21,197,106,.18), rgba(21,197,106,.06));}
     .byu{outline:2px solid var(--accent); box-shadow:0 0 0 2px rgba(0,209,255,.12) inset}
+
     footer{margin-top:22px; color:#a9b5d3; font-size:14px}
     .champ{margin-top:6px; background:linear-gradient(180deg,#0f1b36,#0a1429); border:1px solid #29417a; border-radius:14px; padding:10px}
     .trophy{font-size:26px; margin-right:4px}
+
     /* connectors (visual) */
-    .match::after{
-      content:""; position:absolute; top:50%; right:-10px; width:10px; height:2px; background:#30406b; opacity:.7
-    }
+    .match::after{ content:""; position:absolute; top:50%; right:-10px; width:10px; height:2px; background:#30406b; opacity:.7 }
     .col:last-child .match::after{display:none}
-    @media (max-width:1000px){
-      .grid{grid-template-columns: repeat(2,1fr)}
-    }
-    @media (max-width:620px){
-      header{flex-direction:column; align-items:flex-start}
-      .grid{grid-template-columns:1fr}
-    }
+
+    @media (max-width:1000px){ .grid{grid-template-columns: repeat(2,1fr)} }
+    @media (max-width:620px){ header{flex-direction:column; align-items:flex-start} .grid{grid-template-columns:1fr} }
+
+    /* test output */
+    #testlog{ margin-top:12px; padding:10px; background:#0c142a; border:1px solid #22335b; border-radius:10px; font-size:13px; line-height:1.4 }
+    .ok{ color:var(--pass) }
+    .bad{ color:var(--fail) }
   </style>
 </head>
 <body>
@@ -89,214 +81,349 @@
         <button id="final">Sim Championship</button>
         <button id="all" class="accent">Simulate All</button>
         <button id="reset" class="secondary">Reset</button>
+        <button id="runtests" title="Run built-in tests">Run Tests</button>
       </div>
     </header>
-    <div class="grid" id="bracket">
-      <!-- Columns injected by JS -->
-    </div>
-    <div class="champ" id="champion"></div>
+
+    <div class="grid" id="bracket"><!-- Columns injected by JS --></div>
+
+    <div class="col champ" id="champion"></div>
+
+    <div id="testlog" hidden></div>
+
     <footer>
       Tip: BYU is destiny here. Everyone else is at the mercy of the RNG seeded by their ranking.
     </footer>
   </div>
-  <script>
-    (function(){
-      // --- Data ---------------------------------------------------------------
-      const DEFAULT_TEAMS = [
-        {seed:1, name:"Georgia"},
-        {seed:2, name:"Ohio State"},
-        {seed:3, name:"Texas"},
-        {seed:4, name:"Michigan"},
-        {seed:5, name:"Hawaii"},
-        {seed:6, name:"Oregon"},
-        {seed:7, name:"Florida State"},
-        {seed:8, name:"Notre Dame"},
-        {seed:9, name:"Clemson"},
-        {seed:10, name:"Oklahoma"},
-        {seed:11, name:"USC"},
-        {seed:12, name:"BYU"},
-      ];
-      let teams = JSON.parse(JSON.stringify(DEFAULT_TEAMS));
-      // --- State for bracket rounds ------------------------------------------
-      const rounds = {
-        R1: [ {slot:"5", a:5, b:12}, {slot:"6", a:6, b:11}, {slot:"7", a:7, b:10}, {slot:"8", a:8, b:9} ],
-        QF: [ {top:4, r1:"5"}, {top:3, r1:"6"}, {top:2, r1:"7"}, {top:1, r1:"8"} ],
-        SF: [ {fromQF:[0,3]}, {fromQF:[1,2]} ],
-        F: [ {fromSF:[0,1]} ]
-      };
-      const results = { R1: [], QF: [], SF: [], F: [] };
-      const bySeed = seed => teams.find(t => t.seed === seed);
-      function pickWinner(t1, t2){
-        const A = typeof t1 === 'object' ? t1 : bySeed(t1);
-        const B = typeof t2 === 'object' ? t2 : bySeed(t2);
-        if(!A || !B) return A || B;
-        if (A.name.toUpperCase() === 'BYU') return A;
-        if (B.name.toUpperCase() === 'BYU') return B;
-        const a = A.seed, b = B.seed;
-        const pA = (b) / (a + b);
-        const roll = Math.random();
-        return (roll < pA) ? A : B;
-      }
-      const el = sel => document.querySelector(sel);
-      const bracket = el('#bracket');
-      const champBox = el('#champion');
-      function teamRow(t, isWinner){
-        if(!t) return `<div class="team bye"><span class="name">— bye —</span></div>`;
-        const isBYU = t.name.toUpperCase() === 'BYU';
-        const cls = `team ${isWinner? 'winner':''} ${isBYU? 'byu':''}`;
-        return `<div class="${cls}">
-          <span class="seed">#${t.seed}</span>
-          <span class="name">${t.name}</span>
-          <span class="score">${isWinner? 'W':''}</span>
-        </div>`;
-      }
-      function render(){
-        const colR1 = results.R1; const colQF = results.QF; const colSF = results.SF; const colF = results.F;
-        const r1Html = rounds.R1.map((m,i)=>{
-          const A = bySeed(m.a), B = bySeed(m.b);
-          const W = colR1[i];
-          return `<div class="match" data-round="R1" data-idx="${i}">
-            ${teamRow(A, W && W.name===A.name)}
-            ${teamRow(B, W && W.name===B.name)}
-          </div>`;
-        }).join('');
-        const qfHtml = rounds.QF.map((m,i)=>{
-          const top = bySeed(m.top);
-          const r1MatchIdx = rounds.R1.findIndex(x=>x.slot===String(m.r1));
-          const r1Win = colR1[r1MatchIdx];
-          const A = top; const B = r1Win || null;
-          const W = colQF[i];
-          return `<div class="match" data-round="QF" data-idx="${i}">
-            ${teamRow(A, W && W.name===A.name)}
-            ${teamRow(B, W && B && W.name===B.name)}
-          </div>`;
-        }).join('');
-        const sfHtml = rounds.SF.map((m,i)=>{
-          const [qA, qB] = m.fromQF;
-          const A = colQF[qA] || null;
-          const B = colQF[qB] || null;
-          const W = colSF[i];
-          return `<div class="match" data-round="SF" data-idx="${i}">
-            ${teamRow(A, W && A && W.name===A.name)}
-            ${teamRow(B, W && B && W.name===B.name)}
-          </div>`;
-        }).join('');
-        const fHtml = rounds.F.map((m,i)=>{
-          const [sA, sB] = m.fromSF;
-          const A = colSF[sA] || null;
-          const B = colSF[sB] || null;
-          const W = colF[i];
-          return `<div class="match" data-round="F" data-idx="${i}">
-            ${teamRow(A, W && A && W.name===A.name)}
-            ${teamRow(B, W && B && W.name===B.name)}
-          </div>`;
-        }).join('');
-        bracket.innerHTML = `
-          <div class="col"><h3>First Round</h3>${r1Html}</div>
-          <div class="col"><h3>Quarterfinals</h3>${qfHtml}</div>
-          <div class="col"><h3>Semifinals</h3>${sfHtml}</div>
-          <div class="col"><h3>Championship</h3>${fHtml}</div>
-          <div class="col"><h3>Winner</h3>${championCard()}</div>
-        `;
-        updateChampionBanner();
-      }
-      function championCard(){
-        const champ = results.F[0];
-        if(!champ) return `<div class="match"><div class="team bye">Awaiting champion…</div></div>`;
-        const isBYU = champ.name.toUpperCase() === 'BYU';
-        return `<div class="match">
-          <div class="team ${isBYU? 'byu winner' : 'winner'}">
-            <span class="seed">#${champ.seed}</span>
-            <span class="name">${champ.name}</span>
-            <span class="score">🏆</span>
-          </div>
-        </div>`;
-      }
-      function updateChampionBanner(){
-        const champ = results.F[0];
-        if(!champ){ champBox.innerHTML = ""; return; }
-        const isBYU = champ.name.toUpperCase()==='BYU';
-        champBox.innerHTML = isBYU
-          ? `<div><span class="trophy">🏆</span><strong>BYU</strong> are National Champions! Destiny fulfilled.</div>`
-          : `<div><span class="trophy">🏆</span><strong>${champ.name}</strong> win it all! (Check your settings… BYU was supposed to win 😉)</div>`;
-      }
-      function simulateR1(){
-        results.R1 = rounds.R1.map(m => pickWinner(bySeed(m.a), bySeed(m.b)));
-        results.QF = []; results.SF = []; results.F = [];
-        render();
-      }
-      function simulateQF(){
-        if(results.R1.length !== 4) simulateR1();
-        results.QF = rounds.QF.map(m => {
-          const top = bySeed(m.top);
-          const r1MatchIdx = rounds.R1.findIndex(x=>x.slot===String(m.r1));
-          const other = results.R1[r1MatchIdx];
-          return pickWinner(top, other);
-        });
-        results.SF = []; results.F = [];
-        render();
-      }
-      function simulateSF(){
-        if(results.QF.length !== 4) simulateQF();
-        results.SF = rounds.SF.map(m => {
-          const A = results.QF[m.fromQF[0]];
-          const B = results.QF[m.fromQF[1]];
-          return pickWinner(A,B);
-        });
-        results.F = [];
-        render();
-      }
-      function simulateFinal(){
-        if(results.SF.length !== 2) simulateSF();
-        const A = results.SF[rounds.F[0].fromSF[0]];
-        const B = results.SF[rounds.F[0].fromSF[1]];
-        results.F = [pickWinner(A,B)];
-        render();
-      }
-      function simulateAll(){
-        simulateR1();
-        simulateQF();
-        simulateSF();
-        simulateFinal();
-      }
-      function reset(){
-        teams = JSON.parse(JSON.stringify(DEFAULT_TEAMS));
-        clearResults();
-        render();
-      }
-      function clearResults(){ results.R1=[]; results.QF=[]; results.SF=[]; results.F=[]; champBox.innerHTML = ""; }
-      function shuffleSeeds(){
-        const copy = [...teams];
-        for (let i = copy.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [copy[i], copy[j]] = [copy[j], copy[i]];
-        }
-        teams = copy.map((t, idx) => ({...t, seed: idx+1}));
-        const byuIdx = teams.findIndex(t => t.name.toUpperCase()==='BYU');
-        if(byuIdx === -1){
-          teams[teams.length-1] = {seed:12, name:'BYU'};
-        }
-        teams.sort((a,b)=>a.seed-b.seed);
-        clearResults();
-        render();
-      }
-      document.getElementById('first').addEventListener('click', simulateR1);
-      document.getElementById('quarters').addEventListener('click', simulateQF);
-      document.getElementById('semis').addEventListener('click', simulateSF);
-      document.getElementById('final').addEventListener('click', simulateFinal);
-      document.getElementById('all').addEventListener('click', simulateAll);
-      document.getElementById('reset').addEventListener('click', reset);
-      document.getElementById('randomize').addEventListener('click', shuffleSeeds);
 
-      // Improvement: Keyboard shortcut (press R) to reset bracket
-      document.addEventListener('keydown', function(event) {
-        if (event.key === 'r' || event.key === 'R') {
-          reset();
-        }
-      });
+<script>
+(function(){
+  // --- Data ---------------------------------------------------------------
+  const DEFAULT_TEAMS = [
+    {seed:1,  name:"Georgia"},
+    {seed:2,  name:"Ohio State"},
+    {seed:3,  name:"Texas"},
+    {seed:4,  name:"Michigan"},
+    {seed:5,  name:"Alabama"},
+    {seed:6,  name:"Oregon"},
+    {seed:7,  name:"Florida State"},
+    {seed:8,  name:"Notre Dame"},
+    {seed:9,  name:"Clemson"},
+    {seed:10, name:"Oklahoma"},
+    {seed:11, name:"USC"},
+    {seed:12, name:"BYU"},
+  ];
 
-      render();
-    })();
-  </script>
+  let teams = JSON.parse(JSON.stringify(DEFAULT_TEAMS));
+
+  // --- State for bracket rounds ------------------------------------------
+  // 12-team format: top 4 get byes
+  // R1: (5 v 12), (6 v 11), (7 v 10), (8 v 9)
+  // QF: 4 v (5/12), 3 v (6/11), 2 v (7/10), 1 v (8/9)
+  // SF: winner(QF1) v winner(QF4), winner(QF2) v winner(QF3)
+  // F:  winners of SF1, SF2
+  const rounds = {
+    R1: [ {slot:"5", a:5, b:12}, {slot:"6", a:6, b:11}, {slot:"7", a:7, b:10}, {slot:"8", a:8, b:9} ],
+    QF: [ {top:4, r1:"5"}, {top:3, r1:"6"}, {top:2, r1:"7"}, {top:1, r1:"8"} ],
+    SF: [ {fromQF:[0,3]}, {fromQF:[1,2]} ],
+    F:  [ {fromSF:[0,1]} ]
+  };
+
+  // Storage for winners by key
+  const results = { R1: [], QF: [], SF: [], F: [] };
+  // Parallel structure to store scorelines for each match
+  const scores  = { R1: [], QF: [], SF: [], F: [] };
+
+  // Utility: get team by seed number
+  const bySeed = seed => teams.find(t => t.seed === seed);
+
+  // Winner logic: BYU always wins; otherwise bias by better seed
+  function pickWinner(t1, t2){
+    // Normalize objects {name, seed}
+    const A = typeof t1 === 'object' ? t1 : bySeed(t1);
+    const B = typeof t2 === 'object' ? t2 : bySeed(t2);
+    if(!A || !B) return A || B; // safety
+
+    if (A.name.toUpperCase() === 'BYU') return A;
+    if (B.name.toUpperCase() === 'BYU') return B;
+
+    // Seed-weighted probability: lower seed (better rank) has higher chance
+    const a = A.seed, b = B.seed;
+    const pA = (b) / (a + b); // ex: 5 vs 12 -> pA = 12/(17) ≈ .71
+    const roll = Math.random();
+    return (roll < pA) ? A : B;
+  }
+
+  // Score generator ---------------------------------------------------------
+  function simulateGame(A, B){
+    const W = pickWinner(A, B);
+    // Seed gap influences margin (bigger gap → bigger margin)
+    const gap = Math.max(1, Math.abs((A.seed||12) - (B.seed||12)));
+    let margin = 3 + Math.floor(Math.random()*10); // 3..12
+    margin += Math.floor(gap/3) * (2 + Math.floor(Math.random()*5)); // +2..6 per ~3 seed gap
+    // Give BYU some extra swagger 😄
+    if (W.name.toUpperCase() === 'BYU') { margin += 3 + Math.floor(Math.random()*7); }
+    // Winner base score 20..41
+    let winScore  = 20 + Math.floor(Math.random()*22);
+    let loseScore = Math.max(3, winScore - margin);
+    // Map scores back to A/B order
+    const scoreA = (W.name===A.name) ? winScore : loseScore;
+    const scoreB = (W.name===B.name) ? winScore : loseScore;
+    return { winner: W, scoreA, scoreB };
+  }
+
+  // DOM helpers ------------------------------------------------------------
+  const el = sel => document.querySelector(sel);
+  const bracket = el('#bracket');
+  const champBox = el('#champion');
+  const testLog  = el('#testlog');
+
+  function teamRow(t, isWinner, score){
+    if(!t) return `<div class="team bye"><span class="name">— bye —</span></div>`;
+    const isBYU = t.name.toUpperCase() === 'BYU';
+    const cls = `team ${isWinner? 'winner':''} ${isBYU? 'byu':''}`;
+    const scoreText = Number.isFinite(score) ? score : '';
+    return `<div class="${cls}">
+      <span class="seed">#${t.seed}</span>
+      <span class="name">${t.name}</span>
+      <span class="score">${scoreText}</span>
+    </div>`
+  }
+
+  function championCard(){
+    const champ = results.F[0];
+    if(!champ) return `<div class="match"><div class="team bye">Awaiting champion…</div></div>`;
+    const isBYU = champ.name.toUpperCase() === 'BYU';
+    return `<div class="match">
+      <div class="team ${isBYU? 'byu winner' : 'winner'}">
+        <span class="seed">#${champ.seed}</span>
+        <span class="name">${champ.name}</span>
+        <span class="score">🏆</span>
+      </div>
+    </div>`
+  }
+
+  function updateChampionBanner(){
+    const champ = results.F[0];
+    if(!champ){ champBox.innerHTML = ""; return; }
+    const isBYU = champ.name.toUpperCase()==='BYU';
+    champBox.innerHTML = isBYU
+      ? `<div><span class="trophy">🏆</span><strong>BYU</strong> are National Champions! Destiny fulfilled.</div>`
+      : `<div><span class="trophy">🏆</span><strong>${champ.name}</strong> win it all! (Check your settings… BYU was supposed to win 😉)</div>`;
+  }
+
+  // Render -----------------------------------------------------------------
+  function render(){
+    const colR1 = results.R1; const colQF = results.QF; const colSF = results.SF; const colF = results.F;
+
+    const r1Html = rounds.R1.map((m,i)=>{
+      const A = bySeed(m.a), B = bySeed(m.b);
+      const W = colR1[i];
+      const S = scores.R1[i];
+      return `<div class="match" data-round="R1" data-idx="${i}">
+        ${teamRow(A, W && W.name===A.name, S ? S.a : undefined)}
+        ${teamRow(B, W && W.name===B.name, S ? S.b : undefined)}
+      </div>`
+    }).join('');
+
+    const qfHtml = rounds.QF.map((m,i)=>{
+      const top = bySeed(m.top);
+      const r1MatchIdx = rounds.R1.findIndex(x=>x.slot===String(m.r1));
+      const r1Win = colR1[r1MatchIdx];
+      const A = top; const B = r1Win || null;
+      const W = colQF[i];
+      const S = scores.QF[i];
+      return `<div class="match" data-round="QF" data-idx="${i}">
+        ${teamRow(A, W && W.name===A.name, S ? S.a : undefined)}
+        ${teamRow(B, W && B && W.name===B.name, S ? S.b : undefined)}
+      </div>`
+    }).join('');
+
+    const sfHtml = rounds.SF.map((m,i)=>{
+      const [qA, qB] = m.fromQF;
+      const A = colQF[qA] || null;
+      const B = colQF[qB] || null;
+      const W = colSF[i];
+      const S = scores.SF[i];
+      return `<div class="match" data-round="SF" data-idx="${i}">
+        ${teamRow(A, W && A && W.name===A.name, S ? S.a : undefined)}
+        ${teamRow(B, W && B && W.name===B.name, S ? S.b : undefined)}
+      </div>`
+    }).join('');
+
+    const fHtml = rounds.F.map((m,i)=>{
+      const [sA, sB] = m.fromSF;
+      const A = colSF[sA] || null;
+      const B = colSF[sB] || null;
+      const W = colF[i];
+      const S = scores.F[i];
+      return `<div class="match" data-round="F" data-idx="${i}">
+        ${teamRow(A, W && A && W.name===A.name, S ? S.a : undefined)}
+        ${teamRow(B, W && B && W.name===B.name, S ? S.b : undefined)}
+      </div>`
+    }).join('');
+
+    bracket.innerHTML = `
+      <div class="col"><h3>First Round</h3>${r1Html}</div>
+      <div class="col"><h3>Quarterfinals</h3>${qfHtml}</div>
+      <div class="col"><h3>Semifinals</h3>${sfHtml}</div>
+      <div class="col"><h3>Championship</h3>${fHtml}</div>
+      <div class="col"><h3>Winner</h3>${championCard()}</div>
+    `;
+
+    updateChampionBanner();
+  }
+
+  // Simulation steps -------------------------------------------------------
+  function simulateR1(){
+    scores.R1 = [];
+    results.R1 = rounds.R1.map((m, i) => {
+      const A = bySeed(m.a), B = bySeed(m.b);
+      const g = simulateGame(A, B);
+      scores.R1[i] = { a: g.scoreA, b: g.scoreB };
+      return g.winner;
+    });
+    // Clear downstream
+    results.QF = []; results.SF = []; results.F = [];
+    scores.QF = []; scores.SF = []; scores.F = [];
+    render();
+  }
+
+  function simulateQF(){
+    if(results.R1.length !== 4) simulateR1();
+    scores.QF = [];
+    results.QF = rounds.QF.map((m,i) => {
+      const top = bySeed(m.top);
+      const r1MatchIdx = rounds.R1.findIndex(x=>x.slot===String(m.r1));
+      const other = results.R1[r1MatchIdx];
+      const g = simulateGame(top, other);
+      scores.QF[i] = { a: g.scoreA, b: g.scoreB };
+      return g.winner;
+    });
+    results.SF = []; results.F = [];
+    scores.SF = []; scores.F = [];
+    render();
+  }
+
+  function simulateSF(){
+    if(results.QF.length !== 4) simulateQF();
+    scores.SF = [];
+    results.SF = rounds.SF.map((m,i) => {
+      const A = results.QF[m.fromQF[0]];
+      const B = results.QF[m.fromQF[1]];
+      const g = simulateGame(A, B);
+      scores.SF[i] = { a: g.scoreA, b: g.scoreB };
+      return g.winner;
+    });
+    results.F = [];
+    scores.F = [];
+    render();
+  }
+
+  function simulateFinal(){
+    if(results.SF.length !== 2) simulateSF();
+    scores.F = [];
+    const A = results.SF[rounds.F[0].fromSF[0]];
+    const B = results.SF[rounds.F[0].fromSF[1]];
+    const g = simulateGame(A, B);
+    results.F = [g.winner];
+    scores.F[0] = { a: g.scoreA, b: g.scoreB };
+    render();
+  }
+
+  function simulateAll(){ simulateR1(); simulateQF(); simulateSF(); simulateFinal(); }
+
+  // Reset and randomize ----------------------------------------------------
+  function reset(){ teams = JSON.parse(JSON.stringify(DEFAULT_TEAMS)); clearResults(); render(); }
+  function clearResults(){
+    results.R1=[]; results.QF=[]; results.SF=[]; results.F=[];
+    scores.R1=[]; scores.QF=[]; scores.SF=[]; scores.F=[];
+    champBox.innerHTML = "";
+  }
+
+  function shuffleSeeds(){
+    // Keep BYU present but randomize overall seeds
+    const copy = [...teams];
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    teams = copy.map((t, idx) => ({...t, seed: idx+1}));
+    const byuIdx = teams.findIndex(t => t.name.toUpperCase()==='BYU');
+    if(byuIdx === -1){ teams[teams.length-1] = {seed:12, name:'BYU'}; }
+    teams.sort((a,b)=>a.seed-b.seed);
+    clearResults();
+    render();
+  }
+
+  // --- TESTS --------------------------------------------------------------
+  function deepCloneState(){
+    return {
+      teams: JSON.parse(JSON.stringify(teams)),
+      results: JSON.parse(JSON.stringify(results)),
+      scores: JSON.parse(JSON.stringify(scores))
+    }
+  }
+  function restoreState(s){ teams = s.teams; Object.assign(results, s.results); Object.assign(scores, s.scores); render(); }
+  function logTest(msg, ok){
+    testLog.hidden = false;
+    const line = document.createElement('div');
+    line.className = ok ? 'ok' : 'bad';
+    line.textContent = (ok ? '✓ ' : '✗ ') + msg;
+    testLog.appendChild(line);
+    return ok;
+  }
+  function clearTests(){ testLog.innerHTML=''; testLog.hidden = true; }
+
+  function runTests(){
+    clearTests();
+    const snap = deepCloneState();
+
+    // T1: BYU always wins head-to-head
+    const byu = {seed:12, name:'BYU'}; const other = {seed:1, name:'Georgia'};
+    const w1 = pickWinner(byu, other);
+    logTest('BYU beats any single opponent in pickWinner()', w1.name==='BYU');
+
+    // T2: simulateGame produces numeric consistent scores
+    const g = simulateGame(byu, other);
+    const t2 = Number.isFinite(g.scoreA) && Number.isFinite(g.scoreB) && ((g.winner.name==='BYU' ? g.scoreA : g.scoreB) >= ((g.winner.name==='BYU' ? g.scoreB : g.scoreA)));
+    logTest('simulateGame returns numeric scores and winner has higher score', !!t2);
+
+    // T3: shuffleSeeds keeps BYU present and seeds unique
+    shuffleSeeds();
+    const seen = new Set(teams.map(t=>t.seed));
+    const t3 = teams.find(t=>t.name.toUpperCase()==='BYU') && seen.size===teams.length;
+    logTest('shuffleSeeds keeps BYU and seeds remain unique', !!t3);
+
+    // T4: simulate full bracket => BYU champions
+    simulateAll();
+    const t4 = results.F[0] && results.F[0].name==='BYU';
+    logTest('simulateAll crowns BYU as champion', !!t4);
+
+    // T5: scores exist for every played game
+    const allScored = ['R1','QF','SF','F'].every(r => scores[r].length === rounds[r].length);
+    logTest('All rounds have scorelines when simulated', allScored);
+
+    // Restore
+    restoreState(snap);
+  }
+
+  // Wire up buttons --------------------------------------------------------
+  document.getElementById('first').addEventListener('click', simulateR1);
+  document.getElementById('quarters').addEventListener('click', simulateQF);
+  document.getElementById('semis').addEventListener('click', simulateSF);
+  document.getElementById('final').addEventListener('click', simulateFinal);
+  document.getElementById('all').addEventListener('click', simulateAll);
+  document.getElementById('reset').addEventListener('click', reset);
+  document.getElementById('randomize').addEventListener('click', shuffleSeeds);
+  document.getElementById('runtests').addEventListener('click', runTests);
+
+  // Keyboard shortcut (press R) to reset bracket
+  document.addEventListener('keydown', function(event) { if (event.key === 'r' || event.key === 'R') { reset(); } });
+
+  // Initial render
+  render();
+})();
+</script>
 </body>
 </html>
